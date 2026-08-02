@@ -11,7 +11,7 @@
   // Order must match the model's classes_ (alphabetical, as scikit-learn sorts them)
   const ROOM_TYPES = ["Entire home/apt", "Private room", "Shared room"];
 
-  const DEFAULT_API_BASE = "http://localhost:8000";
+  const DEFAULT_API_BASE = "https://room-type-classifier-2.onrender.com";
 
   /* ------------------------------------------------------------
      ELEMENT REFERENCES

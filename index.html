@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NYC Listing Dossier &mdash; Room Type Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="grain"></div>
+
+  <header class="masthead">
+    <div class="masthead__mark">
+      <span class="masthead__pin">&#9679;</span>
+      <span class="masthead__title">The Listing Dossier</span>
+    </div>
+    <div class="masthead__meta">
+      <span>Five Boroughs, One Model</span>
+      <span class="masthead__dot">&middot;</span>
+      <span>Room&#8209;Type Classifier</span>
+    </div>
+  </header>
+
+  <main class="layout">
+
+    <!-- LEFT: INTAKE FORM -->
+    <section class="intake" aria-label="Listing intake form">
+      <div class="intake__tab">CASE FILE</div>
+
+      <form id="predict-form" class="form" novalidate>
+
+        <div class="form__section">
+          <h2 class="form__legend"><span class="form__num">01</span>Location</h2>
+          <div class="field-row">
+            <div class="field">
+              <label for="latitude">Latitude</label>
+              <input type="number" id="latitude" name="latitude" step="0.000001" min="-90" max="90" placeholder="40.712776" required />
+            </div>
+            <div class="field">
+              <label for="longitude">Longitude</label>
+              <input type="number" id="longitude" name="longitude" step="0.000001" min="-180" max="180" placeholder="-74.005974" required />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="neighbourhood_group">Borough</label>
+              <select id="neighbourhood_group" name="neighbourhood_group" required>
+                <option value="" disabled selected>Select borough&hellip;</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="neighbourhood">Neighbourhood</label>
+              <input type="text" id="neighbourhood" name="neighbourhood" list="neighbourhood-list" placeholder="Start typing&hellip;" autocomplete="off" required />
+              <datalist id="neighbourhood-list"></datalist>
+            </div>
+          </div>
+        </div>
+
+        <div class="form__section">
+          <h2 class="form__legend"><span class="form__num">02</span>Booking Terms</h2>
+          <div class="field-row">
+            <div class="field">
+              <label for="price">Price <span class="field__unit">USD / night</span></label>
+              <input type="number" id="price" name="price" min="1" step="1" placeholder="150" required />
+            </div>
+            <div class="field">
+              <label for="minimum_nights">Minimum nights</label>
+              <input type="number" id="minimum_nights" name="minimum_nights" min="1" max="365" step="1" placeholder="3" required />
+            </div>
+          </div>
+          <div class="field">
+            <label for="availability_365">Availability <span class="field__unit">days / year</span></label>
+            <input type="range" id="availability_365" name="availability_365" min="0" max="365" step="1" value="180" />
+            <div class="range__readout"><span id="availability_365-out">180</span> / 365 days</div>
+          </div>
+        </div>
+
+        <div class="form__section">
+          <h2 class="form__legend"><span class="form__num">03</span>Host Record</h2>
+          <div class="field-row">
+            <div class="field">
+              <label for="number_of_reviews">Total reviews</label>
+              <input type="number" id="number_of_reviews" name="number_of_reviews" min="0" step="1" placeholder="24" required />
+            </div>
+            <div class="field">
+              <label for="reviews_per_month">Reviews / month</label>
+              <input type="number" id="reviews_per_month" name="reviews_per_month" min="0" step="0.01" placeholder="1.35" required />
+            </div>
+          </div>
+          <div class="field">
+            <label for="calculated_host_listings_count">Host's total listings</label>
+            <input type="number" id="calculated_host_listings_count" name="calculated_host_listings_count" min="0" step="1" placeholder="2" required />
+          </div>
+        </div>
+
+        <div class="form__footer">
+          <button type="submit" id="submit-btn" class="btn-submit">
+            <span class="btn-submit__label">Analyze Listing</span>
+            <span class="btn-submit__spinner" aria-hidden="true"></span>
+          </button>
+          <p id="form-error" class="form-error" role="alert" hidden></p>
+        </div>
+
+      </form>
+    </section>
+
+    <!-- RIGHT: LIVE CARD + RESULT -->
+    <section class="preview" aria-label="Listing preview and prediction result">
+
+      <div class="listing-card" id="listing-card">
+        <div class="listing-card__photo">
+          <span class="listing-card__borough-chip" id="preview-borough">Borough</span>
+          <div class="listing-card__coords" id="preview-coords">--, --</div>
+        </div>
+        <div class="listing-card__body">
+          <div class="listing-card__row">
+            <h3 class="listing-card__hood" id="preview-hood">Neighbourhood pending</h3>
+            <span class="listing-card__price"><sup>$</sup><span id="preview-price">&mdash;</span><small>/night</small></span>
+          </div>
+          <ul class="listing-card__stats">
+            <li><span class="stat-label">Min. stay</span><span class="stat-value" id="preview-nights">&mdash;</span></li>
+            <li><span class="stat-label">Reviews</span><span class="stat-value" id="preview-reviews">&mdash;</span></li>
+            <li><span class="stat-label">Available</span><span class="stat-value" id="preview-availability">&mdash;</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="ledger" id="ledger">
+        <div class="ledger__header">
+          <span>Prediction Ledger</span>
+          <span class="ledger__status" id="ledger-status">awaiting submission</span>
+        </div>
+
+        <div class="ledger__empty" id="ledger-empty">
+          Fill in the case file and press&nbsp;<em>Analyze Listing</em>&nbsp;to run it through the model.
+        </div>
+
+        <div class="ledger__result" id="ledger-result" hidden>
+          <div class="stamp" id="stamp">
+            <span id="stamp-text">ENTIRE HOME/APT</span>
+          </div>
+
+          <div class="bars" id="bars"><!-- populated by JS --></div>
+
+          <div class="ledger__api-line">
+            <span>endpoint</span>
+            <code id="endpoint-echo">/predict</code>
+          </div>
+        </div>
+      </div>
+
+      <details class="config">
+        <summary>Backend connection</summary>
+        <label for="api-url">API base URL</label>
+        <input type="text" id="api-url" placeholder="http://localhost:8000" />
+        <p class="config__hint">Saved locally. The form posts to <code>&lt;base&gt;/predict</code>.</p>
+      </details>
+
+    </section>
+  </main>
+
+  <footer class="colophon">
+    Trained on NYC short-term rental records &middot; Random Forest classifier &middot; served via FastAPI
+  </footer>
+
+<script src="script.js"></script>
+</body>
+</html>
